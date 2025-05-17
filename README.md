@@ -1,6 +1,6 @@
-# 🛒 Flipkart-Scale Enterprise Azure Data Engineering Project
+# 🛒 RetailVerse: An Enterprise-Scale Azure Data Engineering Project
 
-This is an enterprise-grade, end-to-end Azure Data Engineering solution that simulates a Flipkart-style retail ecosystem. It includes scalable data ingestion, processing, storage, transformation, CI/CD automation, reporting, and potential ML integration — built using real Azure services.
+This is an enterprise-grade, end-to-end Azure Data Engineering solution that simulates a retail ecosystem. It includes scalable data ingestion, processing, storage, transformation, CI/CD automation, reporting, and potential ML integration — built using real Azure services.
 
 ---
 
@@ -23,7 +23,7 @@ This is an enterprise-grade, end-to-end Azure Data Engineering solution that sim
 
 - Format: `.csv`
 - Type: Extended retail data (orders, products, customers, inventory)
-- Size: ~100,000+ rows (simulated Flipkart-scale volume)
+- Size: ~100,000+ rows (simulated enterprise-scale volume)
 - Location: [./datasets/retail_data.csv](./datasets/retail_data.csv)
 
 ---
@@ -59,7 +59,7 @@ This is an enterprise-grade, end-to-end Azure Data Engineering solution that sim
 ## 📁 Repo Structure
 
 ```
-flipkart-enterprise-data-engineering/
+enterprise-data-engineering/
 ├── README.md
 ├── RETAIL_AZURE_ARCHITECTURE.md
 ├── datasets/
