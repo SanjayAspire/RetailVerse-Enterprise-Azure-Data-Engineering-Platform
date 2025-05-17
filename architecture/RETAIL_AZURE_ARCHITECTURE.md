@@ -1,6 +1,6 @@
 RETAIL_AZURE_ARCHITECTURE.md
 
-# 📦 Flipkart-Style Azure Data Engineering Project Architecture
+# 📦 RetailVerse: An Enterprise-Scale Azure Data Engineering Project
 
 ## 🏗️ End-to-End Architecture Overview
 
