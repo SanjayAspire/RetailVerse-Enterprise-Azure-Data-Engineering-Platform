@@ -86,19 +86,43 @@ RETAIL_AZURE_ARCHITECTURE.md
 
 ---
 
-## 📋 Key Design Goals Addressed
+---
 
-| Benchmark        | Implementation                                                   |                 |                                                            |
-| ---------------- | ---------------------------------------------------------------- | --------------- | ---------------------------------------------------------- |
-|                  |                                                                  | **Scalability** | ADLS, Databricks, Synapse scale with volume of retail data |
-| **Reliability**  | ADF retry policies, monitor logs, automated triggers             |                 |                                                            |
-| **Governance**   | Azure Purview, RBAC, data lineage                                |                 |                                                            |
-| **Security**     | Private endpoints, Key Vault, Managed Identity                   |                 |                                                            |
-| **Performance**  | Caching in Synapse, parallel reads in Databricks                 |                 |                                                            |
-| **Cost Control** | Serverless SQL pool, automation shutdown scripts, ADF monitoring |                 |                                                            |
-| **CI/CD**        | GitHub → Azure DevOps → Terraform/ARM templates                  |                 |                                                            |
+## 🎯 Architecture Design Goals & Justifications
+
+| Design Goal         | Architecture Element That Addresses It                              |
+|---------------------|----------------------------------------------------------------------|
+| Scalability         | Distributed ETL using Azure Databricks + partitioned ADLS Gen2       |
+| Cost Optimization   | Azure Lifecycle Management, Reserved Capacity, Delta Lake caching    |
+| Security & Privacy  | Azure Key Vault, RBAC via Azure AD, private endpoints, encryption    |
+| Monitoring & Alerts | Azure Monitor, Log Analytics, Alerts via Azure Data Factory          |
+| Governance          | Azure Purview for data cataloging and lineage                        |
+| Data Quality        | PySpark validations + curated layer with cleansing checkpoints       |
+| Automation          | CI/CD via GitHub + Azure DevOps Pipelines                            |
+| Business Insights   | Synapse SQL + Power BI for KPIs, sales trends, segmentation          |
+| Flexibility         | Modular pipeline design using parameterized ADF components           |
+| Real-time Ready     | Event-based triggers, scalable for Event Hubs in future              |
 
 ---
 
-This architecture is suitable for inclusion in your GitHub repository, your portfolio, and interview presentations.
+## 📊 Enterprise KPIs & Quantifiable Benchmarks
+
+| Category            | Metric                                  | Target / Expectation                         |
+|---------------------|------------------------------------------|----------------------------------------------|
+| ⏱️ Latency          | Ingestion latency                        | < 5 minutes from upload to raw zone          |
+| 🔁 Pipeline         | Pipeline success rate                    | > 99%                                        |
+| 🔒 Security         | Role-based access control (RBAC)         | Enforced using Azure AD                      |
+| 💰 Cost             | Storage cost per GB                      | Optimized via Lifecycle Management           |
+| 🔄 Data Freshness   | Update frequency                         | Hourly or Daily                              |
+| 🧪 Data Quality     | Null/invalid record %                    | < 0.5% in curated layer                      |
+| 📊 BI Performance  | Power BI dashboard load time             | < 2 seconds                                  |
+| ⚙️ Infra Management | Infra provisioning time (Terraform)      | < 5 minutes                                  |
+| 📜 Auditing         | Lineage tracking                         | 100% dataset coverage using Azure Purview    |
+| 🔍 Monitoring       | Failure alerts resolution time           | < 15 minutes                                 |
+
+---
+
+
+
+
 
