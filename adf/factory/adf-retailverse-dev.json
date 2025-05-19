@@ -1,0 +1,9 @@
+{
+	"name": "adf-retailverse-dev",
+	"location": "eastus",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "9393f504-0f4b-46ba-ad82-1626664b69e5",
+		"tenantId": "db10c9d0-4deb-4cea-be22-611d928e1814"
+	}
+}
