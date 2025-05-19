@@ -1,0 +1,20 @@
+{
+	"name": "pl_retailverse_placeholder_init",
+	"properties": {
+		"description": "This is a placeholder pipeline for the RetailVerse project.\nUsed to Validate Git Integration and follow industry-grade standards.\nWill be replaced or expanded with real logic in later phases.",
+		"activities": [
+			{
+				"name": "wait_5_seconds",
+				"type": "Wait",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"waitTimeInSeconds": 5
+				}
+			}
+		],
+		"annotations": [
+			"[\"init\", \"placeholder\", \"retailverse\"]"
+		]
+	}
+}
