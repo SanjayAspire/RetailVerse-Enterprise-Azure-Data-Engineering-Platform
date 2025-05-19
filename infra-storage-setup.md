@@ -4,8 +4,8 @@ This file documents the enterprise-grade container structure used in the RetailV
 
 ## ✅ Storage Account Configuration
 
-- **Storage Account Name**: `stgretailverse<env>`
-- **Resource Group**: `rg-retailverse`
+- **Storage Account Name**: `retailversestg`
+- **Resource Group**: `retailverse-rg`
 - **Region**: EastUS
 - **Redundancy**: Locally Redundant Storage (LRS) or Geo-redundant (for prod)
 - **Hierarchy Enabled**: Yes (ADLS Gen2)
