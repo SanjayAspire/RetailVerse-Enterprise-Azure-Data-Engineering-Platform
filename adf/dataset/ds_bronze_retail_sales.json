@@ -13,9 +13,7 @@
 		"typeProperties": {
 			"location": {
 				"type": "AzureBlobFSLocation",
-				"fileName": "retailverse_customers.csv",
-				"folderPath": "retail-sales/customers",
-				"fileSystem": "raw-dev"
+				"fileSystem": "bronze"
 			},
 			"columnDelimiter": ",",
 			"escapeChar": "\\",
