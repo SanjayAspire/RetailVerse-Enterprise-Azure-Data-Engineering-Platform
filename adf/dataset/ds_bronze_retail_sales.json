@@ -1,0 +1,25 @@
+{
+	"name": "ds_bronze_retail_sales",
+	"properties": {
+		"description": "This dataset represents the sink configuration for writing raw retail sales data into the bronze container under the retail_sales directory. It serves as the initial ingestion layer where data is landed with minimal validation before progressing through the medallion architecture in the RetailVerse data platform.",
+		"linkedServiceName": {
+			"referenceName": "ls_adlsgen2_bronze_sink",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [
+			"Sink dataset for writing raw retail sales data to bronze/retail_sales in ADLS Gen2. Forms the ingestion layer in the RetailVerse medallion architecture."
+		],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"folderPath": "retail_sales"
+			},
+			"columnDelimiter": ",",
+			"escapeChar": "\\",
+			"firstRowAsHeader": true,
+			"quoteChar": "\""
+		},
+		"schema": []
+	}
+}

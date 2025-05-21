@@ -1,0 +1,26 @@
+{
+	"name": "ds_raw_retail_sales",
+	"properties": {
+		"description": "This dataset represents the source configuration for ingesting raw retail sales data from the retail_sales directory within the raw-dev container of the ADLS Gen2 storage account. It serves as the initial landing zone for unprocessed CSV files ingested into the RetailVerse data lake environment.\n\n",
+		"linkedServiceName": {
+			"referenceName": "ls_adlsgen2_retailverse_dev",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [
+			"Source dataset for ingesting unprocessed retail sales data (CSV format) from raw-dev/retail_sales in ADLS Gen2. Used in the batch ingestion pipeline for data lake landing."
+		],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"folderPath": "retail_sales",
+				"fileSystem": "retail_sales"
+			},
+			"columnDelimiter": ",",
+			"escapeChar": "\\",
+			"firstRowAsHeader": true,
+			"quoteChar": "\""
+		},
+		"schema": []
+	}
+}
