@@ -2,9 +2,9 @@
 	"name": "ls_adlsgen2_retailverse_dev",
 	"type": "Microsoft.DataFactory/factories/linkedservices",
 	"properties": {
-		"description": "Linked service to ADLS Gen2 storage account for dev environment – RetailVerse",
+		"description": "This linked service establishes a secure connection between Azure Data Factory and the development ADLS Gen2 account for the RetailVerse project. It is used to access the raw, bronze, and other dev-stage containers for all ingestion and transformation operations.",
 		"annotations": [
-			"environment:dev   project:RetailVerse  "
+			"Linked service for connecting ADF to the RetailVerse ADLS Gen2 storage account (dev environment) using account key authentication."
 		],
 		"type": "AzureBlobFS",
 		"typeProperties": {
