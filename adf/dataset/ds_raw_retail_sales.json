@@ -13,8 +13,8 @@
 		"typeProperties": {
 			"location": {
 				"type": "AzureBlobFSLocation",
-				"folderPath": "retail_sales",
-				"fileSystem": "retail_sales"
+				"folderPath": "retail-sales",
+				"fileSystem": "raw-dev"
 			},
 			"columnDelimiter": ",",
 			"escapeChar": "\\",
