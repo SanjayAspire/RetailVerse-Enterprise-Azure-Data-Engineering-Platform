@@ -2,9 +2,9 @@
 	"name": "ls_adlsgen2_bronze_sink",
 	"type": "Microsoft.DataFactory/factories/linkedservices",
 	"properties": {
-		"description": "This linked service connects to the Azure Data Lake Storage Gen2 sink container, facilitating the secure transfer of raw data from the 'raw-dev' landing zone to the 'bronze' layer.",
+		"description": "This linked service provides Azure Data Factory secure connectivity to the Bronze-level Azure Data Lake Storage Gen2 container within the RetailVerse project’s development environment. It enables data landing and staging in the bronze container, serving as the initial persistent storage layer for ingested raw data before downstream transformations.",
 		"annotations": [
-			"Purpose: Ingestion form raw-dev container to bronze container"
+			"Linked service connecting ADF to the Bronze container in RetailVerse ADLS Gen2 (dev environment) for landing raw ingested data with minimal validation."
 		],
 		"type": "AzureBlobFS",
 		"typeProperties": {
