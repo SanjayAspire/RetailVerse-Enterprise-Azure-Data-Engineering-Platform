@@ -1,0 +1,296 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "adf-retailverse-dev"
+		},
+		"ls_adlsgen2_bronze_sink_accountKey": {
+			"type": "secureString",
+			"metadata": "Secure string for 'accountKey' of 'ls_adlsgen2_bronze_sink'"
+		},
+		"ls_adlsgen2_retailverse_dev_accountKey": {
+			"type": "secureString",
+			"metadata": "Secure string for 'accountKey' of 'ls_adlsgen2_retailverse_dev'"
+		},
+		"ls_adlsgen2_bronze_sink_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://retailversestg.dfs.core.windows.net/"
+		},
+		"ls_adlsgen2_retailverse_dev_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://retailversestg.dfs.core.windows.net/"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('factoryName'), '/pl_retailverse_placeholder_init')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"description": "This is a placeholder pipeline for the RetailVerse project.\nUsed to Validate Git Integration and follow industry-grade standards.\nWill be replaced or expanded with real logic in later phases.",
+				"activities": [
+					{
+						"name": "wait_5_seconds",
+						"type": "Wait",
+						"dependsOn": [],
+						"userProperties": [],
+						"typeProperties": {
+							"waitTimeInSeconds": 5
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"annotations": [
+					"[[\"init\", \"placeholder\", \"retailverse\"]"
+				]
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ls_adlsgen2_bronze_sink')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"description": "This linked service provides Azure Data Factory secure connectivity to the Bronze-level Azure Data Lake Storage Gen2 container within the RetailVerse project’s development environment. It enables data landing and staging in the bronze container, serving as the initial persistent storage layer for ingested raw data before downstream transformations.",
+				"annotations": [
+					"Linked service connecting ADF to the Bronze container in RetailVerse ADLS Gen2 (dev environment) for landing raw ingested data with minimal validation."
+				],
+				"type": "AzureBlobFS",
+				"typeProperties": {
+					"url": "[parameters('ls_adlsgen2_bronze_sink_properties_typeProperties_url')]",
+					"accountKey": {
+						"type": "SecureString",
+						"value": "[parameters('ls_adlsgen2_bronze_sink_accountKey')]"
+					}
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ls_adlsgen2_retailverse_dev')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"description": "This linked service establishes a secure connection between Azure Data Factory and the development ADLS Gen2 account for the RetailVerse project. It is used to access the raw, bronze, and other dev-stage containers for all ingestion and transformation operations.",
+				"annotations": [
+					"Linked service for connecting ADF to the RetailVerse ADLS Gen2 storage account (dev environment) using account key authentication."
+				],
+				"type": "AzureBlobFS",
+				"typeProperties": {
+					"url": "[parameters('ls_adlsgen2_retailverse_dev_properties_typeProperties_url')]",
+					"accountKey": {
+						"type": "SecureString",
+						"value": "[parameters('ls_adlsgen2_retailverse_dev_accountKey')]"
+					}
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ds_bronze_retail_sales')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"description": "This dataset represents the sink configuration for writing raw retail sales data into the bronze container under the retail_sales directory. It serves as the initial ingestion layer where data is landed with minimal validation before progressing through the medallion architecture in the RetailVerse data platform.",
+				"linkedServiceName": {
+					"referenceName": "ls_adlsgen2_bronze_sink",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [
+					"Sink dataset for writing raw retail sales data to bronze/retail_sales in ADLS Gen2. Forms the ingestion layer in the RetailVerse medallion architecture."
+				],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileSystem": "bronze"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/ls_adlsgen2_bronze_sink')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ds_raw_retail_sales')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"description": "This dataset represents the source configuration for ingesting raw retail sales data from the retail_sales directory within the raw-dev container of the ADLS Gen2 storage account. It serves as the initial landing zone for unprocessed CSV files ingested into the RetailVerse data lake environment.\n\n",
+				"linkedServiceName": {
+					"referenceName": "ls_adlsgen2_retailverse_dev",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [
+					"Source dataset for ingesting unprocessed retail sales data (CSV format) from raw-dev/retail_sales in ADLS Gen2. Used in the batch ingestion pipeline for data lake landing."
+				],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": "retailverse_customers.csv",
+						"folderPath": "retail-sales/customers",
+						"fileSystem": "raw-dev"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/ls_adlsgen2_retailverse_dev')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/pl_ingest_raw_to_bronze')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"description": "Batch ingestion pipeline for retailverse_customers.csv from raw to bronze. File presence is validated before copy.",
+				"activities": [
+					{
+						"name": "check_file_exists_raw",
+						"type": "GetMetadata",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataset": {
+								"referenceName": "ds_raw_retail_sales",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"fieldList": [
+								"exists"
+							],
+							"storeSettings": {
+								"type": "AzureBlobFSReadSettings",
+								"recursive": true,
+								"enablePartitionDiscovery": false
+							},
+							"formatSettings": {
+								"type": "DelimitedTextReadSettings"
+							}
+						}
+					},
+					{
+						"name": "if_file_exists",
+						"type": "IfCondition",
+						"dependsOn": [
+							{
+								"activity": "check_file_exists_raw",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"expression": {
+								"value": "@activity('check_file_exists_raw').output.exists\n",
+								"type": "Expression"
+							},
+							"ifTrueActivities": [
+								{
+									"name": "copy_raw_to_bronze",
+									"description": "Copies retailverse_customers.csv from raw-dev to bronze zone with file presence validation.",
+									"type": "Copy",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "DelimitedTextSource",
+											"storeSettings": {
+												"type": "AzureBlobFSReadSettings",
+												"recursive": true,
+												"enablePartitionDiscovery": false
+											},
+											"formatSettings": {
+												"type": "DelimitedTextReadSettings"
+											}
+										},
+										"sink": {
+											"type": "DelimitedTextSink",
+											"storeSettings": {
+												"type": "AzureBlobFSWriteSettings"
+											},
+											"formatSettings": {
+												"type": "DelimitedTextWriteSettings",
+												"quoteAllText": true,
+												"fileExtension": ".txt"
+											}
+										},
+										"enableStaging": false,
+										"translator": {
+											"type": "TabularTranslator",
+											"typeConversion": true,
+											"typeConversionSettings": {
+												"allowDataTruncation": true,
+												"treatBooleanAsNumber": false
+											}
+										}
+									},
+									"inputs": [
+										{
+											"referenceName": "ds_raw_retail_sales",
+											"type": "DatasetReference",
+											"parameters": {}
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "ds_bronze_retail_sales",
+											"type": "DatasetReference",
+											"parameters": {}
+										}
+									]
+								}
+							]
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"annotations": [
+					"author : Sanjay",
+					"env : dev",
+					"type : static_batch_ingestion",
+					"entity : retailverse_customers"
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/ds_raw_retail_sales')]",
+				"[concat(variables('factoryId'), '/datasets/ds_bronze_retail_sales')]"
+			]
+		}
+	]
+}

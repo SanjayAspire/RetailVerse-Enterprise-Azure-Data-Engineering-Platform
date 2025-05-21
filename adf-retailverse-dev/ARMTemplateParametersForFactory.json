@@ -1,0 +1,21 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"value": "adf-retailverse-dev"
+		},
+		"ls_adlsgen2_bronze_sink_accountKey": {
+			"value": ""
+		},
+		"ls_adlsgen2_retailverse_dev_accountKey": {
+			"value": ""
+		},
+		"ls_adlsgen2_bronze_sink_properties_typeProperties_url": {
+			"value": "https://retailversestg.dfs.core.windows.net/"
+		},
+		"ls_adlsgen2_retailverse_dev_properties_typeProperties_url": {
+			"value": "https://retailversestg.dfs.core.windows.net/"
+		}
+	}
+}
