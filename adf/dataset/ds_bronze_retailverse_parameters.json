@@ -1,0 +1,49 @@
+{
+	"name": "ds_bronze_retailverse_parameters",
+	"properties": {
+		"description": "A reusable sink dataset that writes incoming data into the Bronze layer of the RetailVerse data lake. It supports dynamic resolution of the target folder and file name using parameters. This dataset supports writing multiple retail entities in a consistent, structured format into curated subdirectories under the Bronze zone.",
+		"linkedServiceName": {
+			"referenceName": "ls_adlsgen2_bronze_sink",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"folder_path": {
+				"type": "string"
+			},
+			"file_name": {
+				"type": "string"
+			}
+		},
+		"annotations": [
+			"owner : Sanjay",
+			"dataset_role : Sink",
+			"zone : Bronze",
+			"project : RetailVerse",
+			"description : Parameterized sink dataset for writing validated retail entity files into the bronze container in ADLS Gen2",
+			"entity_type : retail_entity",
+			"parameters : folder_path, file_name",
+			"sink_path_pattern : bronze/{folder_path}/{file_name}",
+			"data_format : DelimitedText",
+			"usage : Used by pl_ingest_retailverse_entity pipeline to persist raw files to bronze layer for further cleansing and transformation."
+		],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileName": {
+					"value": "@dataset().file_name",
+					"type": "Expression"
+				},
+				"fileSystem": {
+					"value": "@dataset().folder_path",
+					"type": "Expression"
+				}
+			},
+			"columnDelimiter": ",",
+			"escapeChar": "\\",
+			"firstRowAsHeader": true,
+			"quoteChar": "\""
+		},
+		"schema": []
+	}
+}

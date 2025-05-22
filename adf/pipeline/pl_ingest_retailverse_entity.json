@@ -1,0 +1,162 @@
+{
+	"name": "pl_ingest_retailverse_entity",
+	"properties": {
+		"description": "A reusable ingestion pipeline that accepts file metadata (folder_path, file_name) as parameters to dynamically copy data from the Raw zone to the Bronze zone of the RetailVerse data lake. This pipeline is the foundation for scalable, metadata-driven batch ingestion and enables consistent ingestion logic across all retail domains (e.g., customer, order, product).\n\n\n🧠 Key Features:\n✅ Parameter-driven ingestion logic (no hardcoded datasets)\n\n✅ Centralized ingestion logic usable by metadata controllers (Phase M3)\n\n✅ Pre-validates source files using Get Metadata + If Condition\n\n✅ Logs ingestion success/failure for traceability\n\n",
+		"activities": [
+			{
+				"name": "Check_file_exists",
+				"type": "GetMetadata",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "ds_raw_retailverse_parameters",
+						"type": "DatasetReference",
+						"parameters": {
+							"folder_path": "@pipeline().parameters.raw_folder_path",
+							"file_name": "@pipeline().parameters.raw_file_name"
+						}
+					},
+					"fieldList": [
+						"exists"
+					],
+					"storeSettings": {
+						"type": "AzureBlobFSReadSettings",
+						"enablePartitionDiscovery": false
+					},
+					"formatSettings": {
+						"type": "DelimitedTextReadSettings"
+					}
+				}
+			},
+			{
+				"name": "If Condition1",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "Check_file_exists",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@activity('check_file_exists').output.exists",
+						"type": "Expression"
+					},
+					"ifTrueActivities": [
+						{
+							"name": "Copy_raw_to_bronze",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "DelimitedTextSource",
+									"storeSettings": {
+										"type": "AzureBlobFSReadSettings",
+										"recursive": true,
+										"enablePartitionDiscovery": false
+									},
+									"formatSettings": {
+										"type": "DelimitedTextReadSettings"
+									}
+								},
+								"sink": {
+									"type": "DelimitedTextSink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings"
+									},
+									"formatSettings": {
+										"type": "DelimitedTextWriteSettings",
+										"quoteAllText": true,
+										"fileExtension": ".txt"
+									}
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "ds_raw_retailverse_parameters",
+									"type": "DatasetReference",
+									"parameters": {
+										"folder_path": "@pipeline().parameters.raw_folder_path",
+										"file_name": {
+											"value": "@pipeline().parameters.raw_file_name",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "ds_bronze_retailverse_parameters",
+									"type": "DatasetReference",
+									"parameters": {
+										"folder_path": "@pipeline().parameters.bronze_folder_path",
+										"file_name": "@pipeline().parameters.bronze_file_name"
+									}
+								}
+							]
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"raw_folder_path": {
+				"type": "string"
+			},
+			"raw_file_name": {
+				"type": "string"
+			},
+			"bronze_folder_path": {
+				"type": "string"
+			},
+			"bronze_file_name": {
+				"type": "string"
+			}
+		},
+		"annotations": [
+			"owner : Sanjay",
+			"project : RetailVerse",
+			"module_phase : M2",
+			"pipeline_role : Reusable Entity Ingestion",
+			"description : Reusable, parameter-driven ADF pipeline to ingest retail entity data (customers, orders, products) from Raw to Bronze layer in ADLS Gen2",
+			"parameters : folder_path, file_name",
+			"source_dataset : ds_raw_retailverse_parameters",
+			"sink_dataset : ds_bronze_retailverse_parameters",
+			"resolves_path : dynamic via parameters",
+			"execution_pattern : Scheduled or metadata-driven (via controller)",
+			"output_zone:  Bronze",
+			"medallion_layer_target : Bronze (Zone 1)",
+			"extension_ready : Yes – Pluggable into Phase M3 controller",
+			"observability_notes : Suitable for logging success/failure per file, supports further enhancement with status reporting and alerting",
+			"resilience_features : GetMetadata + IfCondition ensures source presence validation before copy\""
+		]
+	}
+}
