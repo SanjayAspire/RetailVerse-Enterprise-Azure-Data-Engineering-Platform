@@ -13,6 +13,7 @@
 		"typeProperties": {
 			"location": {
 				"type": "AzureBlobFSLocation",
+				"folderPath": "retail-sales/products",
 				"fileSystem": "bronze"
 			},
 			"columnDelimiter": ",",
