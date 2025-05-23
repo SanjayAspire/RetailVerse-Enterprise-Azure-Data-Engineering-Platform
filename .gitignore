@@ -1,0 +1,10 @@
+# Ignore unnecessary local files
+.vscode/
+*.log
+*.tmp
+.env
+__pycache__/
+*.pyc
+.DS_Store
+*.bak
+*.ipynb_checkpoints
