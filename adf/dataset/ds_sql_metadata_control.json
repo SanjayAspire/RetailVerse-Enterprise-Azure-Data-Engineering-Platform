@@ -1,0 +1,69 @@
+{
+	"name": "ds_sql_metadata_control",
+	"properties": {
+		"description": "Represents the metadata control table used by RetailVerse Phase 3 pipelines to retrieve entity-level ingestion configuration, including schema, DQ rules, partitioning, and source paths. Enables metadata-driven orchestration of Bronze layer ingestion and validation.",
+		"linkedServiceName": {
+			"referenceName": "ls_sql_retailverse_metadata",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [
+			"project : RetailVerse",
+			"phase : Phase3",
+			"purpose : metadata_control_source",
+			"table : retailverse_metadata.metadata_control",
+			"used_by_pipeline : \"pl_retailverse_bronze_ingestion_driver",
+			"description : Contains ingestion metadata used by ADF to orchestrate schema-aware and DQ-enforced Bronze ingestion workflows."
+		],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "entity_name",
+				"type": "nvarchar"
+			},
+			{
+				"name": "file_format",
+				"type": "nvarchar"
+			},
+			{
+				"name": "source_path",
+				"type": "nvarchar"
+			},
+			{
+				"name": "ingestion_mode",
+				"type": "nvarchar"
+			},
+			{
+				"name": "expected_schema",
+				"type": "nvarchar"
+			},
+			{
+				"name": "dq_rules",
+				"type": "nvarchar"
+			},
+			{
+				"name": "partition_column",
+				"type": "nvarchar"
+			},
+			{
+				"name": "active",
+				"type": "bit"
+			},
+			{
+				"name": "created_at",
+				"type": "datetime",
+				"precision": 23,
+				"scale": 3
+			},
+			{
+				"name": "updated_at",
+				"type": "datetime",
+				"precision": 23,
+				"scale": 3
+			}
+		],
+		"typeProperties": {
+			"schema": "retailverse_metadata",
+			"table": "metadata_control"
+		}
+	}
+}
