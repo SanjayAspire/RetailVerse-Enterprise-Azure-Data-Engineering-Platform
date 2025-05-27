@@ -3,7 +3,15 @@
 	"type": "Microsoft.DataFactory/factories/linkedservices",
 	"properties": {
 		"description": "Linked service connecting Azure Data Factory to the RetailVerse Azure Databricks workspace for orchestrating metadata-driven Bronze layer ingestion, validation, and transformation. Enables execution of modular PySpark notebooks such as bronze_ingestion_driver as part of Phase 3 architecture. This integration facilitates schema enforcement, DQ rule application, audit logging, and quarantine processing across the RetailVerse enterprise-grade data lake.",
-		"annotations": [],
+		"annotations": [
+			"environment : dev",
+			"project : retailverse",
+			"phase : phase3",
+			"layer : bronze",
+			"purpose : databricks_notebook_execution",
+			"used_by_pipeline : pl_ingest_retailverse_metadata_driver",
+			"description : Executes metadata-driven ingestion and validation notebooks in Databricks"
+		],
 		"type": "AzureDatabricksDeltaLake",
 		"typeProperties": {
 			"domain": "https://adb-4334391492508686.6.azuredatabricks.net",
