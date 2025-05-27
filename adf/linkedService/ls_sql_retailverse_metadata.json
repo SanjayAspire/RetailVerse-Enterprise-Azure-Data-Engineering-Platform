@@ -3,7 +3,15 @@
 	"type": "Microsoft.DataFactory/factories/linkedservices",
 	"properties": {
 		"description": "Linked service to RetailVerse metadata SQL database. Hosts control tables (metadata_control) and audit logs (audit_logs) for dynamic, schema-aware, metadata-driven ingestion pipelines in Phase 3 and beyond.\n",
-		"annotations": [],
+		"annotations": [
+			"environment : dev",
+			"project : retailverse",
+			"phase : bronze",
+			"layer : control_metadata_audit",
+			"purpose : metadata_lookup_and_audit_writeback",
+			"used_by_pipeline : pl_ingest_retailverse_metadata_driver",
+			"description : Provides access to metadata_control and audit_logs tables in Azure SQL for metadata-driven ingestion"
+		],
 		"type": "AzureSqlDatabase",
 		"typeProperties": {
 			"server": "sql-retailverse-dev-server.database.windows.net",
