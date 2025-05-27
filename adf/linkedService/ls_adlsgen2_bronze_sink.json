@@ -4,7 +4,13 @@
 	"properties": {
 		"description": "This linked service provides Azure Data Factory secure connectivity to the Bronze-level Azure Data Lake Storage Gen2 container within the RetailVerse project’s development environment. It enables data landing and staging in the bronze container, serving as the initial persistent storage layer for ingested raw data before downstream transformations.",
 		"annotations": [
-			"Linked service connecting ADF to the Bronze container in RetailVerse ADLS Gen2 (dev environment) for landing raw ingested data with minimal validation."
+			"environment : dev",
+			"project : retailverse",
+			"phase : phase2",
+			"layer : bronze",
+			"purpose : validated_data_sink",
+			"storage_scope : bronze_zone",
+			"description : Used to copy Data from the raw-dev container and store it in the bronze container"
 		],
 		"type": "AzureBlobFS",
 		"typeProperties": {
