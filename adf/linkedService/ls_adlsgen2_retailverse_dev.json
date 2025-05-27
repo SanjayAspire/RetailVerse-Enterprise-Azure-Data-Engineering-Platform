@@ -4,7 +4,13 @@
 	"properties": {
 		"description": "This linked service establishes a secure connection between Azure Data Factory and the development ADLS Gen2 account for the RetailVerse project. It is used to access the raw, bronze, and other dev-stage containers for all ingestion and transformation operations.",
 		"annotations": [
-			"Linked service for connecting ADF to the RetailVerse ADLS Gen2 storage account (dev environment) using account key authentication."
+			"environment : dev",
+			"project : retailverse",
+			"phase : phase2",
+			"layer : raw stage",
+			"purpose : adls access for raw files",
+			"storage_scope : raw-dev",
+			"description : The linked service is used to connect to the container raw-dev which stores raw files"
 		],
 		"type": "AzureBlobFS",
 		"typeProperties": {
