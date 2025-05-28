@@ -1,5 +1,5 @@
 {
-	"name": "pl_retailverse_bronze_ingestion_driver",
+	"name": "pl_ingest_retailverse_entity_metadata_driver",
 	"properties": {
 		"description": "Orchestrates metadata-driven Bronze layer ingestion for the RetailVerse platform by dynamically executing PySpark-based Databricks notebooks based on configurations stored in the metadata control table. This pipeline applies schema validation, data quality enforcement, quarantine handling, and audit logging across all active entities. Core to Phase 3's goal of scalable, decoupled, and observable ingestion architecture using Azure-native services.\n\n",
 		"activities": [
@@ -19,14 +19,15 @@
 				"typeProperties": {
 					"source": {
 						"type": "AzureSqlSource",
-						"sqlReaderQuery": "SELECT * FROM retailverse_metadata.metadata_control WHERE active = 1\n",
+						"sqlReaderQuery": "SELECT * FROM retailverse_metadata.metadata_control WHERE  active = 1\n",
 						"queryTimeout": "02:00:00",
 						"partitionOption": "None"
 					},
 					"dataset": {
 						"referenceName": "ds_sql_metadata_control",
 						"type": "DatasetReference"
-					}
+					},
+					"firstRowOnly": false
 				}
 			},
 			{
@@ -47,9 +48,10 @@
 						"value": "@activity('lookup_active_entities').output.value",
 						"type": "Expression"
 					},
+					"isSequential": true,
 					"activities": [
 						{
-							"name": "run_bronze_ingestion_driver",
+							"name": "Run_Ingestion_Job",
 							"description": "Triggers the bronze_ingestion_driver notebook in Azure Databricks for a given entity, applying schema validation, DQ enforcement, error quarantining, and audit logging. Parameters are dynamically passed from metadata, making this execution fully decoupled and reusable.\n\n",
 							"type": "DatabricksNotebook",
 							"dependsOn": [],
@@ -64,12 +66,30 @@
 							"typeProperties": {
 								"notebookPath": "/Workspace/Users/sanjayyadav.sy8888@gmail.com/RetailVerse-Enterprise-Azure-Data-Engineering-Platform/notebooks/phase3/bronze_ingestion_driver",
 								"baseParameters": {
-									"entity_name": "@item().entity_name",
-									"file_format": "@item().file_format",
-									"source_path": "@item().source_path",
-									"expected_schema": "@item().expected_schema",
-									"dq_rules": "@item().dq_rules",
-									"partition_column": "@item().partition_column"
+									"entity_name": {
+										"value": "@item().entity_name",
+										"type": "Expression"
+									},
+									"file_format": {
+										"value": "@item().file_format",
+										"type": "Expression"
+									},
+									"source_path": {
+										"value": "@item().source_path",
+										"type": "Expression"
+									},
+									"expected_schema": {
+										"value": "@item().expected_schema",
+										"type": "Expression"
+									},
+									"dq_rules": {
+										"value": "@item().dq_rules",
+										"type": "Expression"
+									},
+									"partition_column": {
+										"value": "@item().partition_column",
+										"type": "Expression"
+									}
 								}
 							},
 							"linkedServiceName": {
@@ -82,7 +102,7 @@
 							"type": "IfCondition",
 							"dependsOn": [
 								{
-									"activity": "run_bronze_ingestion_driver",
+									"activity": "Run_Ingestion_Job",
 									"dependencyConditions": [
 										"Failed"
 									]
@@ -91,7 +111,7 @@
 							"userProperties": [],
 							"typeProperties": {
 								"expression": {
-									"value": "@not(equals(activity('run_bronze_ingestion_driver').status, 'Succeeded'))\n",
+									"value": "@not(equals(activity('Run_Ingestion_Job').status, 'Succeeded'))\n",
 									"type": "Expression"
 								},
 								"ifTrueActivities": [
