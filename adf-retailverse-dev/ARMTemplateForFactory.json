@@ -15,13 +15,13 @@
 			"type": "secureString",
 			"metadata": "Secure string for 'accountKey' of 'ls_adlsgen2_retailverse_dev'"
 		},
-		"ls_sql_retailverse_metadata_password": {
-			"type": "secureString",
-			"metadata": "Secure string for 'password' of 'ls_sql_retailverse_metadata'"
-		},
 		"ls_retailverse_databrick_accessToken": {
 			"type": "secureString",
 			"metadata": "Secure string for 'accessToken' of 'ls_retailverse_databrick'"
+		},
+		"ls_sql_retailverse_metadata_password": {
+			"type": "secureString",
+			"metadata": "Secure string for 'password' of 'ls_sql_retailverse_metadata'"
 		},
 		"ls_adlsgen2_bronze_sink_properties_typeProperties_url": {
 			"type": "string",
@@ -30,6 +30,10 @@
 		"ls_adlsgen2_retailverse_dev_properties_typeProperties_url": {
 			"type": "string",
 			"defaultValue": "https://retailversestg.dfs.core.windows.net/"
+		},
+		"ls_retailverse_databrick_properties_typeProperties_existingClusterId": {
+			"type": "string",
+			"defaultValue": "0526-153108-vqlwzny0"
 		},
 		"ls_sql_retailverse_metadata_properties_typeProperties_server": {
 			"type": "string",
@@ -42,10 +46,6 @@
 		"ls_sql_retailverse_metadata_properties_typeProperties_userName": {
 			"type": "string",
 			"defaultValue": "retailadmin"
-		},
-		"ls_retailverse_databrick_properties_typeProperties_existingClusterId": {
-			"type": "string",
-			"defaultValue": "0526-153108-vqlwzny0"
 		}
 	},
 	"variables": {
@@ -361,6 +361,201 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('factoryName'), '/pl_ingest_retailverse_entity_metadata_driver')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"description": "Orchestrates metadata-driven Bronze layer ingestion for the RetailVerse platform by dynamically executing PySpark-based Databricks notebooks based on configurations stored in the metadata control table. This pipeline applies schema validation, data quality enforcement, quarantine handling, and audit logging across all active entities. Core to Phase 3's goal of scalable, decoupled, and observable ingestion architecture using Azure-native services.\n\n",
+				"activities": [
+					{
+						"name": "lookup_active_entities",
+						"description": "Fetches all active entities from the metadata control table in Azure SQL Database. Each row provides the schema, data quality rules, partitioning strategy, and source path required to orchestrate metadata-driven Bronze zone ingestion via Databricks notebooks.\n\n",
+						"type": "Lookup",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzureSqlSource",
+								"sqlReaderQuery": "SELECT * FROM retailverse_metadata.metadata_control WHERE  active = 1\n",
+								"queryTimeout": "02:00:00",
+								"partitionOption": "None"
+							},
+							"dataset": {
+								"referenceName": "ds_sql_metadata_control",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"firstRowOnly": false
+						}
+					},
+					{
+						"name": "foreach_entity",
+						"description": "Iterates through each active ingestion entity returned from the metadata table. Enables dynamic, metadata-driven execution of the bronze_ingestion_driver notebook, allowing the pipeline to process heterogeneous datasets at scale in a modular and scalable fashion.\n\n",
+						"type": "ForEach",
+						"dependsOn": [
+							{
+								"activity": "lookup_active_entities",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@activity('lookup_active_entities').output.value",
+								"type": "Expression"
+							},
+							"isSequential": true,
+							"activities": [
+								{
+									"name": "Run_Ingestion_Job",
+									"description": "Triggers the bronze_ingestion_driver notebook in Azure Databricks for a given entity, applying schema validation, DQ enforcement, error quarantining, and audit logging. Parameters are dynamically passed from metadata, making this execution fully decoupled and reusable.\n\n",
+									"type": "DatabricksNotebook",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"notebookPath": "/Workspace/Users/sanjayyadav.sy8888@gmail.com/RetailVerse-Enterprise-Azure-Data-Engineering-Platform/notebooks/phase3/bronze_ingestion_driver",
+										"baseParameters": {
+											"entity_name": {
+												"value": "@item().entity_name",
+												"type": "Expression"
+											},
+											"file_format": {
+												"value": "@item().file_format",
+												"type": "Expression"
+											},
+											"source_path": {
+												"value": "@item().source_path",
+												"type": "Expression"
+											},
+											"expected_schema": {
+												"value": "@item().expected_schema",
+												"type": "Expression"
+											},
+											"dq_rules": {
+												"value": "@item().dq_rules",
+												"type": "Expression"
+											},
+											"partition_column": {
+												"value": "@item().partition_column",
+												"type": "Expression"
+											}
+										}
+									},
+									"linkedServiceName": {
+										"referenceName": "ls_retailverse_databrick",
+										"type": "LinkedServiceReference"
+									}
+								},
+								{
+									"name": "check_error_metadata_loggable",
+									"type": "IfCondition",
+									"dependsOn": [
+										{
+											"activity": "Run_Ingestion_Job",
+											"dependencyConditions": [
+												"Failed"
+											]
+										}
+									],
+									"userProperties": [],
+									"typeProperties": {
+										"expression": {
+											"value": "@not(equals(activity('Run_Ingestion_Job').status, 'Succeeded'))\n",
+											"type": "Expression"
+										},
+										"ifTrueActivities": [
+											{
+												"name": "log_failure_to_audit_logs",
+												"type": "SqlServerStoredProcedure",
+												"dependsOn": [],
+												"policy": {
+													"timeout": "0.12:00:00",
+													"retry": 0,
+													"retryIntervalInSeconds": 30,
+													"secureOutput": false,
+													"secureInput": false
+												},
+												"userProperties": [],
+												"typeProperties": {
+													"storedProcedureName": "[[retailverse_metadata].[sp_log_ingestion_failure]",
+													"storedProcedureParameters": {
+														"end_time": {
+															"value": "",
+															"type": "Datetime"
+														},
+														"entity_name": {
+															"value": "",
+															"type": "String"
+														},
+														"error_message": {
+															"value": "",
+															"type": "String"
+														},
+														"ingestion_status": {
+															"value": "",
+															"type": "String"
+														},
+														"run_id": {
+															"value": "",
+															"type": "Guid"
+														},
+														"start_time": {
+															"value": "",
+															"type": "Datetime"
+														}
+													}
+												},
+												"linkedServiceName": {
+													"referenceName": "ls_sql_retailverse_metadata",
+													"type": "LinkedServiceReference"
+												}
+											}
+										]
+									}
+								}
+							]
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"annotations": [
+					"environment : dev",
+					"project : RetailVerse",
+					"phase : Phase3",
+					"layer : bronze",
+					"purpose : metadata_orchestrated_bronze_ingestion",
+					"ingestion_type : batch",
+					"notebook_triggered : bronze_ingestion_driver",
+					"metadata_source : retailverse_metadata.metadata_control",
+					"audit_table : retailverse_metadata.audit_logs",
+					"description : Orchestrates metadata-driven Bronze ingestion by executing Databricks notebooks with schema and DQ validation. Powers ingestion automation and observability for all active retail datasets."
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/ds_sql_metadata_control')]",
+				"[concat(variables('factoryId'), '/linkedServices/ls_retailverse_databrick')]",
+				"[concat(variables('factoryId'), '/linkedServices/ls_sql_retailverse_metadata')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('factoryName'), '/pl_retailverse_placeholder_init')]",
 			"type": "Microsoft.DataFactory/factories/pipelines",
 			"apiVersion": "2018-06-01",
@@ -558,264 +753,6 @@
 			]
 		},
 		{
-			"name": "[concat(parameters('factoryName'), '/ls_adlsgen2_bronze_sink')]",
-			"type": "Microsoft.DataFactory/factories/linkedServices",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"description": "This linked service provides Azure Data Factory secure connectivity to the Bronze-level Azure Data Lake Storage Gen2 container within the RetailVerse project’s development environment. It enables data landing and staging in the bronze container, serving as the initial persistent storage layer for ingested raw data before downstream transformations.",
-				"annotations": [
-					"environment : dev",
-					"project : retailverse",
-					"phase : phase2",
-					"layer : bronze",
-					"purpose : validated_data_sink",
-					"storage_scope : bronze_zone",
-					"description : Used to copy Data from the raw-dev container and store it in the bronze container"
-				],
-				"type": "AzureBlobFS",
-				"typeProperties": {
-					"url": "[parameters('ls_adlsgen2_bronze_sink_properties_typeProperties_url')]",
-					"accountKey": {
-						"type": "SecureString",
-						"value": "[parameters('ls_adlsgen2_bronze_sink_accountKey')]"
-					}
-				}
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/ls_adlsgen2_retailverse_dev')]",
-			"type": "Microsoft.DataFactory/factories/linkedServices",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"description": "This linked service establishes a secure connection between Azure Data Factory and the development ADLS Gen2 account for the RetailVerse project. It is used to access the raw, bronze, and other dev-stage containers for all ingestion and transformation operations.",
-				"annotations": [
-					"environment : dev",
-					"project : retailverse",
-					"phase : phase2",
-					"layer : raw stage",
-					"purpose : adls access for raw files",
-					"storage_scope : raw-dev",
-					"description : The linked service is used to connect to the container raw-dev which stores raw files"
-				],
-				"type": "AzureBlobFS",
-				"typeProperties": {
-					"url": "[parameters('ls_adlsgen2_retailverse_dev_properties_typeProperties_url')]",
-					"accountKey": {
-						"type": "SecureString",
-						"value": "[parameters('ls_adlsgen2_retailverse_dev_accountKey')]"
-					}
-				}
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/ls_sql_retailverse_metadata')]",
-			"type": "Microsoft.DataFactory/factories/linkedServices",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"description": "Linked service to RetailVerse metadata SQL database. Hosts control tables (metadata_control) and audit logs (audit_logs) for dynamic, schema-aware, metadata-driven ingestion pipelines in Phase 3 and beyond.\n",
-				"annotations": [
-					"environment : dev",
-					"project : retailverse",
-					"phase : bronze",
-					"layer : control_metadata_audit",
-					"purpose : metadata_lookup_and_audit_writeback",
-					"used_by_pipeline : pl_ingest_retailverse_metadata_driver",
-					"description : Provides access to metadata_control and audit_logs tables in Azure SQL for metadata-driven ingestion"
-				],
-				"type": "AzureSqlDatabase",
-				"typeProperties": {
-					"server": "[parameters('ls_sql_retailverse_metadata_properties_typeProperties_server')]",
-					"database": "[parameters('ls_sql_retailverse_metadata_properties_typeProperties_database')]",
-					"encrypt": "mandatory",
-					"trustServerCertificate": false,
-					"authenticationType": "SQL",
-					"userName": "[parameters('ls_sql_retailverse_metadata_properties_typeProperties_userName')]",
-					"password": {
-						"type": "SecureString",
-						"value": "[parameters('ls_sql_retailverse_metadata_password')]"
-					}
-				}
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/pl_retailverse_bronze_ingestion_driver')]",
-			"type": "Microsoft.DataFactory/factories/pipelines",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"description": "Orchestrates metadata-driven Bronze layer ingestion for the RetailVerse platform by dynamically executing PySpark-based Databricks notebooks based on configurations stored in the metadata control table. This pipeline applies schema validation, data quality enforcement, quarantine handling, and audit logging across all active entities. Core to Phase 3's goal of scalable, decoupled, and observable ingestion architecture using Azure-native services.\n\n",
-				"activities": [
-					{
-						"name": "lookup_active_entities",
-						"description": "Fetches all active entities from the metadata control table in Azure SQL Database. Each row provides the schema, data quality rules, partitioning strategy, and source path required to orchestrate metadata-driven Bronze zone ingestion via Databricks notebooks.\n\n",
-						"type": "Lookup",
-						"dependsOn": [],
-						"policy": {
-							"timeout": "0.12:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"source": {
-								"type": "AzureSqlSource",
-								"sqlReaderQuery": "SELECT * FROM retailverse_metadata.metadata_control WHERE active = 1\n",
-								"queryTimeout": "02:00:00",
-								"partitionOption": "None"
-							},
-							"dataset": {
-								"referenceName": "ds_sql_metadata_control",
-								"type": "DatasetReference",
-								"parameters": {}
-							}
-						}
-					},
-					{
-						"name": "foreach_entity",
-						"description": "Iterates through each active ingestion entity returned from the metadata table. Enables dynamic, metadata-driven execution of the bronze_ingestion_driver notebook, allowing the pipeline to process heterogeneous datasets at scale in a modular and scalable fashion.\n\n",
-						"type": "ForEach",
-						"dependsOn": [
-							{
-								"activity": "lookup_active_entities",
-								"dependencyConditions": [
-									"Succeeded"
-								]
-							}
-						],
-						"userProperties": [],
-						"typeProperties": {
-							"items": {
-								"value": "@activity('lookup_active_entities').output.value",
-								"type": "Expression"
-							},
-							"activities": [
-								{
-									"name": "run_bronze_ingestion_driver",
-									"description": "Triggers the bronze_ingestion_driver notebook in Azure Databricks for a given entity, applying schema validation, DQ enforcement, error quarantining, and audit logging. Parameters are dynamically passed from metadata, making this execution fully decoupled and reusable.\n\n",
-									"type": "DatabricksNotebook",
-									"dependsOn": [],
-									"policy": {
-										"timeout": "0.12:00:00",
-										"retry": 0,
-										"retryIntervalInSeconds": 30,
-										"secureOutput": false,
-										"secureInput": false
-									},
-									"userProperties": [],
-									"typeProperties": {
-										"notebookPath": "/Workspace/Users/sanjayyadav.sy8888@gmail.com/RetailVerse-Enterprise-Azure-Data-Engineering-Platform/notebooks/phase3/bronze_ingestion_driver",
-										"baseParameters": {
-											"entity_name": "@item().entity_name",
-											"file_format": "@item().file_format",
-											"source_path": "@item().source_path",
-											"expected_schema": "@item().expected_schema",
-											"dq_rules": "@item().dq_rules",
-											"partition_column": "@item().partition_column"
-										}
-									},
-									"linkedServiceName": {
-										"referenceName": "ls_retailverse_databrick",
-										"type": "LinkedServiceReference"
-									}
-								},
-								{
-									"name": "check_error_metadata_loggable",
-									"type": "IfCondition",
-									"dependsOn": [
-										{
-											"activity": "run_bronze_ingestion_driver",
-											"dependencyConditions": [
-												"Failed"
-											]
-										}
-									],
-									"userProperties": [],
-									"typeProperties": {
-										"expression": {
-											"value": "@not(equals(activity('run_bronze_ingestion_driver').status, 'Succeeded'))\n",
-											"type": "Expression"
-										},
-										"ifTrueActivities": [
-											{
-												"name": "log_failure_to_audit_logs",
-												"type": "SqlServerStoredProcedure",
-												"dependsOn": [],
-												"policy": {
-													"timeout": "0.12:00:00",
-													"retry": 0,
-													"retryIntervalInSeconds": 30,
-													"secureOutput": false,
-													"secureInput": false
-												},
-												"userProperties": [],
-												"typeProperties": {
-													"storedProcedureName": "[[retailverse_metadata].[sp_log_ingestion_failure]",
-													"storedProcedureParameters": {
-														"end_time": {
-															"value": "",
-															"type": "Datetime"
-														},
-														"entity_name": {
-															"value": "",
-															"type": "String"
-														},
-														"error_message": {
-															"value": "",
-															"type": "String"
-														},
-														"ingestion_status": {
-															"value": "",
-															"type": "String"
-														},
-														"run_id": {
-															"value": "",
-															"type": "Guid"
-														},
-														"start_time": {
-															"value": "",
-															"type": "Datetime"
-														}
-													}
-												},
-												"linkedServiceName": {
-													"referenceName": "ls_sql_retailverse_metadata",
-													"type": "LinkedServiceReference"
-												}
-											}
-										]
-									}
-								}
-							]
-						}
-					}
-				],
-				"policy": {
-					"elapsedTimeMetric": {}
-				},
-				"annotations": [
-					"environment : dev",
-					"project : RetailVerse",
-					"phase : Phase3",
-					"layer : bronze",
-					"purpose : metadata_orchestrated_bronze_ingestion",
-					"ingestion_type : batch",
-					"notebook_triggered : bronze_ingestion_driver",
-					"metadata_source : retailverse_metadata.metadata_control",
-					"audit_table : retailverse_metadata.audit_logs",
-					"description : Orchestrates metadata-driven Bronze ingestion by executing Databricks notebooks with schema and DQ validation. Powers ingestion automation and observability for all active retail datasets."
-				]
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/datasets/ds_sql_metadata_control')]",
-				"[concat(variables('factoryId'), '/linkedServices/ls_retailverse_databrick')]",
-				"[concat(variables('factoryId'), '/linkedServices/ls_sql_retailverse_metadata')]"
-			]
-		},
-		{
 			"name": "[concat(parameters('factoryName'), '/ds_sql_metadata_control')]",
 			"type": "Microsoft.DataFactory/factories/datasets",
 			"apiVersion": "2018-06-01",
@@ -890,6 +827,58 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('factoryName'), '/ls_adlsgen2_bronze_sink')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"description": "This linked service provides Azure Data Factory secure connectivity to the Bronze-level Azure Data Lake Storage Gen2 container within the RetailVerse project’s development environment. It enables data landing and staging in the bronze container, serving as the initial persistent storage layer for ingested raw data before downstream transformations.",
+				"annotations": [
+					"environment : dev",
+					"project : retailverse",
+					"phase : phase2",
+					"layer : bronze",
+					"purpose : validated_data_sink",
+					"storage_scope : bronze_zone",
+					"description : Used to copy Data from the raw-dev container and store it in the bronze container"
+				],
+				"type": "AzureBlobFS",
+				"typeProperties": {
+					"url": "[parameters('ls_adlsgen2_bronze_sink_properties_typeProperties_url')]",
+					"accountKey": {
+						"type": "SecureString",
+						"value": "[parameters('ls_adlsgen2_bronze_sink_accountKey')]"
+					}
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ls_adlsgen2_retailverse_dev')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"description": "This linked service establishes a secure connection between Azure Data Factory and the development ADLS Gen2 account for the RetailVerse project. It is used to access the raw, bronze, and other dev-stage containers for all ingestion and transformation operations.",
+				"annotations": [
+					"environment : dev",
+					"project : retailverse",
+					"phase : phase2",
+					"layer : raw stage",
+					"purpose : adls access for raw files",
+					"storage_scope : raw-dev",
+					"description : The linked service is used to connect to the container raw-dev which stores raw files"
+				],
+				"type": "AzureBlobFS",
+				"typeProperties": {
+					"url": "[parameters('ls_adlsgen2_retailverse_dev_properties_typeProperties_url')]",
+					"accountKey": {
+						"type": "SecureString",
+						"value": "[parameters('ls_adlsgen2_retailverse_dev_accountKey')]"
+					}
+				}
+			},
+			"dependsOn": []
+		},
+		{
 			"name": "[concat(parameters('factoryName'), '/ls_retailverse_databrick')]",
 			"type": "Microsoft.DataFactory/factories/linkedServices",
 			"apiVersion": "2018-06-01",
@@ -912,6 +901,37 @@
 						"value": "[parameters('ls_retailverse_databrick_accessToken')]"
 					},
 					"existingClusterId": "[parameters('ls_retailverse_databrick_properties_typeProperties_existingClusterId')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ls_sql_retailverse_metadata')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"description": "Linked service to RetailVerse metadata SQL database. Hosts control tables (metadata_control) and audit logs (audit_logs) for dynamic, schema-aware, metadata-driven ingestion pipelines in Phase 3 and beyond.\n",
+				"annotations": [
+					"environment : dev",
+					"project : retailverse",
+					"phase : bronze",
+					"layer : control_metadata_audit",
+					"purpose : metadata_lookup_and_audit_writeback",
+					"used_by_pipeline : pl_ingest_retailverse_metadata_driver",
+					"description : Provides access to metadata_control and audit_logs tables in Azure SQL for metadata-driven ingestion"
+				],
+				"type": "AzureSqlDatabase",
+				"typeProperties": {
+					"server": "[parameters('ls_sql_retailverse_metadata_properties_typeProperties_server')]",
+					"database": "[parameters('ls_sql_retailverse_metadata_properties_typeProperties_database')]",
+					"encrypt": "mandatory",
+					"trustServerCertificate": false,
+					"authenticationType": "SQL",
+					"userName": "[parameters('ls_sql_retailverse_metadata_properties_typeProperties_userName')]",
+					"password": {
+						"type": "SecureString",
+						"value": "[parameters('ls_sql_retailverse_metadata_password')]"
+					}
 				}
 			},
 			"dependsOn": []

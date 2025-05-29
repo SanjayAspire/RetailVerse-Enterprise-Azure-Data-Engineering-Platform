@@ -15,13 +15,13 @@
 			"type": "secureString",
 			"metadata": "Secure string for 'accountKey' of 'ls_adlsgen2_retailverse_dev'"
 		},
-		"ls_sql_retailverse_metadata_password": {
-			"type": "secureString",
-			"metadata": "Secure string for 'password' of 'ls_sql_retailverse_metadata'"
-		},
 		"ls_retailverse_databrick_accessToken": {
 			"type": "secureString",
 			"metadata": "Secure string for 'accessToken' of 'ls_retailverse_databrick'"
+		},
+		"ls_sql_retailverse_metadata_password": {
+			"type": "secureString",
+			"metadata": "Secure string for 'password' of 'ls_sql_retailverse_metadata'"
 		},
 		"ls_adlsgen2_bronze_sink_properties_typeProperties_url": {
 			"type": "string",
@@ -30,6 +30,10 @@
 		"ls_adlsgen2_retailverse_dev_properties_typeProperties_url": {
 			"type": "string",
 			"defaultValue": "https://retailversestg.dfs.core.windows.net/"
+		},
+		"ls_retailverse_databrick_properties_typeProperties_existingClusterId": {
+			"type": "string",
+			"defaultValue": "0526-153108-vqlwzny0"
 		},
 		"ls_sql_retailverse_metadata_properties_typeProperties_server": {
 			"type": "string",
@@ -42,10 +46,6 @@
 		"ls_sql_retailverse_metadata_properties_typeProperties_userName": {
 			"type": "string",
 			"defaultValue": "retailadmin"
-		},
-		"ls_retailverse_databrick_properties_typeProperties_existingClusterId": {
-			"type": "string",
-			"defaultValue": "0526-153108-vqlwzny0"
 		},
 		"containerUri": {
 			"type": "string",
@@ -80,17 +80,20 @@
 					"ls_adlsgen2_retailverse_dev_accountKey": {
 						"value": "[parameters('ls_adlsgen2_retailverse_dev_accountKey')]"
 					},
-					"ls_sql_retailverse_metadata_password": {
-						"value": "[parameters('ls_sql_retailverse_metadata_password')]"
-					},
 					"ls_retailverse_databrick_accessToken": {
 						"value": "[parameters('ls_retailverse_databrick_accessToken')]"
+					},
+					"ls_sql_retailverse_metadata_password": {
+						"value": "[parameters('ls_sql_retailverse_metadata_password')]"
 					},
 					"ls_adlsgen2_bronze_sink_properties_typeProperties_url": {
 						"value": "[parameters('ls_adlsgen2_bronze_sink_properties_typeProperties_url')]"
 					},
 					"ls_adlsgen2_retailverse_dev_properties_typeProperties_url": {
 						"value": "[parameters('ls_adlsgen2_retailverse_dev_properties_typeProperties_url')]"
+					},
+					"ls_retailverse_databrick_properties_typeProperties_existingClusterId": {
+						"value": "[parameters('ls_retailverse_databrick_properties_typeProperties_existingClusterId')]"
 					},
 					"ls_sql_retailverse_metadata_properties_typeProperties_server": {
 						"value": "[parameters('ls_sql_retailverse_metadata_properties_typeProperties_server')]"
@@ -100,9 +103,6 @@
 					},
 					"ls_sql_retailverse_metadata_properties_typeProperties_userName": {
 						"value": "[parameters('ls_sql_retailverse_metadata_properties_typeProperties_userName')]"
-					},
-					"ls_retailverse_databrick_properties_typeProperties_existingClusterId": {
-						"value": "[parameters('ls_retailverse_databrick_properties_typeProperties_existingClusterId')]"
 					}
 				}
 			},

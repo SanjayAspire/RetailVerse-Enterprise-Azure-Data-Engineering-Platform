@@ -15,13 +15,13 @@
 			"type": "secureString",
 			"metadata": "Secure string for 'accountKey' of 'ls_adlsgen2_retailverse_dev'"
 		},
-		"ls_sql_retailverse_metadata_password": {
-			"type": "secureString",
-			"metadata": "Secure string for 'password' of 'ls_sql_retailverse_metadata'"
-		},
 		"ls_retailverse_databrick_accessToken": {
 			"type": "secureString",
 			"metadata": "Secure string for 'accessToken' of 'ls_retailverse_databrick'"
+		},
+		"ls_sql_retailverse_metadata_password": {
+			"type": "secureString",
+			"metadata": "Secure string for 'password' of 'ls_sql_retailverse_metadata'"
 		},
 		"ls_adlsgen2_bronze_sink_properties_typeProperties_url": {
 			"type": "string",
@@ -30,6 +30,10 @@
 		"ls_adlsgen2_retailverse_dev_properties_typeProperties_url": {
 			"type": "string",
 			"defaultValue": "https://retailversestg.dfs.core.windows.net/"
+		},
+		"ls_retailverse_databrick_properties_typeProperties_existingClusterId": {
+			"type": "string",
+			"defaultValue": "0526-153108-vqlwzny0"
 		},
 		"ls_sql_retailverse_metadata_properties_typeProperties_server": {
 			"type": "string",
@@ -42,10 +46,6 @@
 		"ls_sql_retailverse_metadata_properties_typeProperties_userName": {
 			"type": "string",
 			"defaultValue": "retailadmin"
-		},
-		"ls_retailverse_databrick_properties_typeProperties_existingClusterId": {
-			"type": "string",
-			"defaultValue": "0526-153108-vqlwzny0"
 		}
 	},
 	"variables": {
@@ -131,6 +131,33 @@
 			"dependsOn": []
 		},
 		{
+			"name": "[concat(parameters('factoryName'), '/ls_retailverse_databrick')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"description": "Linked service connecting Azure Data Factory to the RetailVerse Azure Databricks workspace for orchestrating metadata-driven Bronze layer ingestion, validation, and transformation. Enables execution of modular PySpark notebooks such as bronze_ingestion_driver as part of Phase 3 architecture. This integration facilitates schema enforcement, DQ rule application, audit logging, and quarantine processing across the RetailVerse enterprise-grade data lake.",
+				"annotations": [
+					"environment : dev",
+					"project : RetailVerse",
+					"phase : Phase3",
+					"layer : bronze",
+					"purpose : databricks_notebook_execution",
+					"used_by_pipeline : pl_ingest_retailverse_metadata_driver",
+					"description : Executes metadata-driven ingestion and validation notebooks in Databricks"
+				],
+				"type": "AzureDatabricks",
+				"typeProperties": {
+					"domain": "https://adb-4334391492508686.6.azuredatabricks.net",
+					"accessToken": {
+						"type": "SecureString",
+						"value": "[parameters('ls_retailverse_databrick_accessToken')]"
+					},
+					"existingClusterId": "[parameters('ls_retailverse_databrick_properties_typeProperties_existingClusterId')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
 			"name": "[concat(parameters('factoryName'), '/ls_sql_retailverse_metadata')]",
 			"type": "Microsoft.DataFactory/factories/linkedServices",
 			"apiVersion": "2018-06-01",
@@ -157,33 +184,6 @@
 						"type": "SecureString",
 						"value": "[parameters('ls_sql_retailverse_metadata_password')]"
 					}
-				}
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/ls_retailverse_databrick')]",
-			"type": "Microsoft.DataFactory/factories/linkedServices",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"description": "Linked service connecting Azure Data Factory to the RetailVerse Azure Databricks workspace for orchestrating metadata-driven Bronze layer ingestion, validation, and transformation. Enables execution of modular PySpark notebooks such as bronze_ingestion_driver as part of Phase 3 architecture. This integration facilitates schema enforcement, DQ rule application, audit logging, and quarantine processing across the RetailVerse enterprise-grade data lake.",
-				"annotations": [
-					"environment : dev",
-					"project : RetailVerse",
-					"phase : Phase3",
-					"layer : bronze",
-					"purpose : databricks_notebook_execution",
-					"used_by_pipeline : pl_ingest_retailverse_metadata_driver",
-					"description : Executes metadata-driven ingestion and validation notebooks in Databricks"
-				],
-				"type": "AzureDatabricks",
-				"typeProperties": {
-					"domain": "https://adb-4334391492508686.6.azuredatabricks.net",
-					"accessToken": {
-						"type": "SecureString",
-						"value": "[parameters('ls_retailverse_databrick_accessToken')]"
-					},
-					"existingClusterId": "[parameters('ls_retailverse_databrick_properties_typeProperties_existingClusterId')]"
 				}
 			},
 			"dependsOn": []
@@ -742,7 +742,7 @@
 			]
 		},
 		{
-			"name": "[concat(parameters('factoryName'), '/pl_retailverse_bronze_ingestion_driver')]",
+			"name": "[concat(parameters('factoryName'), '/pl_ingest_retailverse_entity_metadata_driver')]",
 			"type": "Microsoft.DataFactory/factories/pipelines",
 			"apiVersion": "2018-06-01",
 			"properties": {
@@ -764,7 +764,7 @@
 						"typeProperties": {
 							"source": {
 								"type": "AzureSqlSource",
-								"sqlReaderQuery": "SELECT * FROM retailverse_metadata.metadata_control WHERE active = 1\n",
+								"sqlReaderQuery": "SELECT * FROM retailverse_metadata.metadata_control WHERE  active = 1\n",
 								"queryTimeout": "02:00:00",
 								"partitionOption": "None"
 							},
@@ -772,7 +772,8 @@
 								"referenceName": "ds_sql_metadata_control",
 								"type": "DatasetReference",
 								"parameters": {}
-							}
+							},
+							"firstRowOnly": false
 						}
 					},
 					{
@@ -793,9 +794,10 @@
 								"value": "@activity('lookup_active_entities').output.value",
 								"type": "Expression"
 							},
+							"isSequential": true,
 							"activities": [
 								{
-									"name": "run_bronze_ingestion_driver",
+									"name": "Run_Ingestion_Job",
 									"description": "Triggers the bronze_ingestion_driver notebook in Azure Databricks for a given entity, applying schema validation, DQ enforcement, error quarantining, and audit logging. Parameters are dynamically passed from metadata, making this execution fully decoupled and reusable.\n\n",
 									"type": "DatabricksNotebook",
 									"dependsOn": [],
@@ -810,12 +812,30 @@
 									"typeProperties": {
 										"notebookPath": "/Workspace/Users/sanjayyadav.sy8888@gmail.com/RetailVerse-Enterprise-Azure-Data-Engineering-Platform/notebooks/phase3/bronze_ingestion_driver",
 										"baseParameters": {
-											"entity_name": "@item().entity_name",
-											"file_format": "@item().file_format",
-											"source_path": "@item().source_path",
-											"expected_schema": "@item().expected_schema",
-											"dq_rules": "@item().dq_rules",
-											"partition_column": "@item().partition_column"
+											"entity_name": {
+												"value": "@item().entity_name",
+												"type": "Expression"
+											},
+											"file_format": {
+												"value": "@item().file_format",
+												"type": "Expression"
+											},
+											"source_path": {
+												"value": "@item().source_path",
+												"type": "Expression"
+											},
+											"expected_schema": {
+												"value": "@item().expected_schema",
+												"type": "Expression"
+											},
+											"dq_rules": {
+												"value": "@item().dq_rules",
+												"type": "Expression"
+											},
+											"partition_column": {
+												"value": "@item().partition_column",
+												"type": "Expression"
+											}
 										}
 									},
 									"linkedServiceName": {
@@ -828,7 +848,7 @@
 									"type": "IfCondition",
 									"dependsOn": [
 										{
-											"activity": "run_bronze_ingestion_driver",
+											"activity": "Run_Ingestion_Job",
 											"dependencyConditions": [
 												"Failed"
 											]
@@ -837,7 +857,7 @@
 									"userProperties": [],
 									"typeProperties": {
 										"expression": {
-											"value": "@not(equals(activity('run_bronze_ingestion_driver').status, 'Succeeded'))\n",
+											"value": "@not(equals(activity('Run_Ingestion_Job').status, 'Succeeded'))\n",
 											"type": "Expression"
 										},
 										"ifTrueActivities": [

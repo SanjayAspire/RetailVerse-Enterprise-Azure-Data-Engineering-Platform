@@ -11,10 +11,10 @@
 		"ls_adlsgen2_retailverse_dev_accountKey": {
 			"value": ""
 		},
-		"ls_sql_retailverse_metadata_password": {
+		"ls_retailverse_databrick_accessToken": {
 			"value": ""
 		},
-		"ls_retailverse_databrick_accessToken": {
+		"ls_sql_retailverse_metadata_password": {
 			"value": ""
 		},
 		"ls_adlsgen2_bronze_sink_properties_typeProperties_url": {
@@ -22,6 +22,9 @@
 		},
 		"ls_adlsgen2_retailverse_dev_properties_typeProperties_url": {
 			"value": "https://retailversestg.dfs.core.windows.net/"
+		},
+		"ls_retailverse_databrick_properties_typeProperties_existingClusterId": {
+			"value": "0526-153108-vqlwzny0"
 		},
 		"ls_sql_retailverse_metadata_properties_typeProperties_server": {
 			"value": "sql-retailverse-dev-server.database.windows.net"
@@ -31,9 +34,6 @@
 		},
 		"ls_sql_retailverse_metadata_properties_typeProperties_userName": {
 			"value": "retailadmin"
-		},
-		"ls_retailverse_databrick_properties_typeProperties_existingClusterId": {
-			"value": "0526-153108-vqlwzny0"
 		},
 		"containerUri": {
 			"value": ""
