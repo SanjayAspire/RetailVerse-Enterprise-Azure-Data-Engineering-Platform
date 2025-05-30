@@ -132,7 +132,7 @@
 											"storedProcedureParameters": {
 												"end_time": {
 													"value": "",
-													"type": "Datetime"
+													"type": "DateTime"
 												},
 												"entity_name": {
 													"value": "",
@@ -142,17 +142,21 @@
 													"value": "",
 													"type": "String"
 												},
-												"ingestion_status": {
+												"row_count": {
 													"value": "",
-													"type": "String"
+													"type": "Int32"
 												},
 												"run_id": {
 													"value": "",
-													"type": "Guid"
+													"type": "String"
 												},
 												"start_time": {
 													"value": "",
-													"type": "Datetime"
+													"type": "DateTime"
+												},
+												"status": {
+													"value": "",
+													"type": "String"
 												}
 											}
 										},
