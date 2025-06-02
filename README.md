@@ -46,7 +46,7 @@ RAW (ADLS)      →     BRONZE (Delta)      →     SILVER (Clean Delta)      �
 | M0    | Foundation Setup               | ✅ Completed |
 | M1    | Static Batch Ingestion         | ✅ Completed |
 | M2    | Parameterized Ingestion        | ✅ Completed |
-| M3    | Metadata-Driven Ingestion      | 🔜 Upcoming  |
+| M3    | Metadata-Driven Ingestion      | 🔜 Completed  |
 | M4    | Silver Layer Transformation    | 🔜 Upcoming  |
 | M5    | Gold Layer KPIs + Outputs      | 🔜 Upcoming  |
 
@@ -84,6 +84,7 @@ RetailVerse-Enterprise-Azure-Data-Engineering-Platform/
 ## 📄 Module Documentation
 
 - [Phase M2: Parameterized Ingestion](/ingestion/adf_param/README.md)
+- [Phase 3 Ingestion Overview](docs/phase3_ingestion_overview.md)
 - [Architecture Documentation](/docs/architecture.md)
 - [Naming Conventions](/docs/naming_conventions.md)
 
